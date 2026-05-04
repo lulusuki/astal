@@ -2,6 +2,8 @@
   "name": "astal-docs",
   "type": "module",
   "devDependencies": {
+    "@types/node": "latest",
+    "typescript": "latest",
     "vitepress": "latest",
     "vue": "latest"
   },
@@ -13,6 +15,7 @@
     "lint": "eslint . --fix"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
     "devicon": "latest",
     "font-logos": "latest"
   },

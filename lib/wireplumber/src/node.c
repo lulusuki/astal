@@ -74,6 +74,7 @@ static GParamSpec *astal_wp_node_properties[ASTAL_WP_NODE_N_PROPERTIES] = {
 static void astal_wp_node_pw_properties_changed(AstalWpNode *self);
 
 void astal_wp_node_update_volume(AstalWpNode *self) {
+    g_return_if_fail(ASTAL_WP_IS_NODE(self));
     AstalWpNodePrivate *priv = astal_wp_node_get_instance_private(self);
 
     if (priv->mixer == NULL) return;
@@ -95,11 +96,13 @@ void astal_wp_node_update_volume(AstalWpNode *self) {
 
     if (channels != NULL) {
         const gchar *key;
-        const gchar *channel_str;
-        gdouble channel_volume;
+        const gchar *channel_str = NULL;
+        gdouble channel_volume = 0;
         GVariant *varvol;
 
         while (g_variant_iter_loop(channels, "{&sv}", &key, &varvol)) {
+            channel_str = NULL;
+            channel_volume = 0;
             g_variant_lookup(varvol, "volume", "d", &channel_volume);
             g_variant_lookup(varvol, "channel", "&s", &channel_str);
 
@@ -134,12 +137,14 @@ void astal_wp_node_update_volume(AstalWpNode *self) {
 }
 
 static void astal_wp_node_mixer_changed(AstalWpNode *self, guint node_id) {
+    g_return_if_fail(ASTAL_WP_IS_NODE(self));
     AstalWpNodePrivate *priv = astal_wp_node_get_instance_private(self);
     if (priv->id != node_id) return;
     astal_wp_node_update_volume(self);
 }
 
 void astal_wp_node_set_channel_volume(AstalWpNode *self, const gchar *name, gdouble volume) {
+    g_return_if_fail(ASTAL_WP_IS_NODE(self));
     AstalWpNodePrivate *priv = astal_wp_node_get_instance_private(self);
 
     if (priv->lock_channels) {
@@ -167,14 +172,17 @@ void astal_wp_node_set_channel_volume(AstalWpNode *self, const gchar *name, gdou
         g_auto(GVariantBuilder) channel_volumes_b = G_VARIANT_BUILDER_INIT(G_VARIANT_TYPE_VARDICT);
 
         const gchar *key;
-        const gchar *channel_str;
-        gdouble channel_volume;
+        const gchar *channel_str = NULL;
+        gdouble channel_volume = 0;
         GVariant *varvol;
 
         while (g_variant_iter_loop(channels, "{&sv}", &key, &varvol)) {
             g_auto(GVariantBuilder) channel_b = G_VARIANT_BUILDER_INIT(G_VARIANT_TYPE_VARDICT);
+            channel_str = NULL;
+            channel_volume = 0;
             g_variant_lookup(varvol, "volume", "d", &channel_volume);
             g_variant_lookup(varvol, "channel", "&s", &channel_str);
+            if (channel_str == NULL) continue;
             gdouble vol = g_str_equal(name, channel_str) ? volume : channel_volume;
             g_variant_builder_add(&channel_b, "{sv}", "volume", g_variant_new_double(vol));
             g_variant_builder_add(&channel_volumes_b, "{sv}", key,
@@ -199,6 +207,7 @@ void astal_wp_node_set_channel_volume(AstalWpNode *self, const gchar *name, gdou
  * 0 and 1.5.
  */
 void astal_wp_node_set_volume(AstalWpNode *self, gdouble volume) {
+    g_return_if_fail(ASTAL_WP_IS_NODE(self));
     AstalWpNodePrivate *priv = astal_wp_node_get_instance_private(self);
 
     gboolean ret;
@@ -221,14 +230,17 @@ void astal_wp_node_set_volume(AstalWpNode *self, gdouble volume) {
         g_auto(GVariantBuilder) channel_volumes_b = G_VARIANT_BUILDER_INIT(G_VARIANT_TYPE_VARDICT);
 
         const gchar *key;
-        const gchar *channel_str;
-        gdouble channel_volume;
+        const gchar *channel_str = NULL;
+        gdouble channel_volume = 0;
         GVariant *varvol;
 
         while (g_variant_iter_loop(channels, "{&sv}", &key, &varvol)) {
             g_auto(GVariantBuilder) channel_b = G_VARIANT_BUILDER_INIT(G_VARIANT_TYPE_VARDICT);
+            channel_str = NULL;
+            channel_volume = 0;
             g_variant_lookup(varvol, "volume", "d", &channel_volume);
             g_variant_lookup(varvol, "channel", "&s", &channel_str);
+            if (channel_str == NULL) continue;
             gdouble vol = priv->volume == 0 ? volume : channel_volume * volume / priv->volume;
             g_variant_builder_add(&channel_b, "{sv}", "volume", g_variant_new_double(vol));
             g_variant_builder_add(&channel_volumes_b, "{sv}", key,
@@ -255,6 +267,7 @@ void astal_wp_node_set_volume(AstalWpNode *self, gdouble volume) {
  * Sets the mute status for the node.
  */
 void astal_wp_node_set_mute(AstalWpNode *self, gboolean mute) {
+    g_return_if_fail(ASTAL_WP_IS_NODE(self));
     AstalWpNodePrivate *priv = astal_wp_node_get_instance_private(self);
 
     gboolean ret;
@@ -273,6 +286,7 @@ void astal_wp_node_set_mute(AstalWpNode *self, gboolean mute) {
  * gets the media class of the node.
  */
 AstalWpMediaClass astal_wp_node_get_media_class(AstalWpNode *self) {
+    g_return_val_if_fail(ASTAL_WP_IS_NODE(self), ASTAL_WP_MEDIA_CLASS_UNKNOWN);
     AstalWpNodePrivate *priv = astal_wp_node_get_instance_private(self);
     return priv->type;
 }
@@ -284,6 +298,7 @@ AstalWpMediaClass astal_wp_node_get_media_class(AstalWpNode *self) {
  * gets the current state of this node
  */
 AstalWpNodeState astal_wp_node_get_state(AstalWpNode *self) {
+    g_return_val_if_fail(ASTAL_WP_IS_NODE(self), ASTAL_WP_NODE_STATE_ERROR);
     AstalWpNodePrivate *priv = astal_wp_node_get_instance_private(self);
     return priv->state;
 }
@@ -295,6 +310,7 @@ AstalWpNodeState astal_wp_node_get_state(AstalWpNode *self) {
  * gets the id of the node.
  */
 guint astal_wp_node_get_id(AstalWpNode *self) {
+    g_return_val_if_fail(ASTAL_WP_IS_NODE(self), 0);
     AstalWpNodePrivate *priv = astal_wp_node_get_instance_private(self);
     return priv->id;
 }
@@ -306,6 +322,7 @@ guint astal_wp_node_get_id(AstalWpNode *self) {
  * gets the mute status of the node.
  */
 gboolean astal_wp_node_get_mute(AstalWpNode *self) {
+    g_return_val_if_fail(ASTAL_WP_IS_NODE(self), FALSE);
     AstalWpNodePrivate *priv = astal_wp_node_get_instance_private(self);
     return priv->mute;
 }
@@ -317,6 +334,7 @@ gboolean astal_wp_node_get_mute(AstalWpNode *self) {
  * gets the volume
  */
 gdouble astal_wp_node_get_volume(AstalWpNode *self) {
+    g_return_val_if_fail(ASTAL_WP_IS_NODE(self), 0);
     AstalWpNodePrivate *priv = astal_wp_node_get_instance_private(self);
     return priv->volume;
 }
@@ -330,7 +348,7 @@ gdouble astal_wp_node_get_volume(AstalWpNode *self) {
  * Returns: (nullable):
  */
 const gchar *astal_wp_node_get_description(AstalWpNode *self) {
-    g_return_val_if_fail(self != NULL, NULL);
+    g_return_val_if_fail(ASTAL_WP_IS_NODE(self), NULL);
     AstalWpNodePrivate *priv = astal_wp_node_get_instance_private(self);
     if (priv->description != NULL) return priv->description;
     if (priv->nick != NULL) return priv->nick;
@@ -347,6 +365,7 @@ const gchar *astal_wp_node_get_description(AstalWpNode *self) {
  * Returns: (nullable):
  */
 const gchar *astal_wp_node_get_name(AstalWpNode *self) {
+    g_return_val_if_fail(ASTAL_WP_IS_NODE(self), NULL);
     AstalWpNodePrivate *priv = astal_wp_node_get_instance_private(self);
     return priv->name;
 }
@@ -358,11 +377,13 @@ const gchar *astal_wp_node_get_name(AstalWpNode *self) {
  * gets the icon for this node
  */
 const gchar *astal_wp_node_get_icon(AstalWpNode *self) {
+    g_return_val_if_fail(ASTAL_WP_IS_NODE(self), "image-missing");
     AstalWpNodePrivate *priv = astal_wp_node_get_instance_private(self);
     return priv->icon;
 }
 
 void astal_wp_node_set_icon(AstalWpNode *self, const gchar *icon) {
+    g_return_if_fail(ASTAL_WP_IS_NODE(self));
     AstalWpNodePrivate *priv = astal_wp_node_get_instance_private(self);
     if (!g_strcmp0(priv->icon, icon)) return;
     g_free(priv->icon);
@@ -371,6 +392,7 @@ void astal_wp_node_set_icon(AstalWpNode *self, const gchar *icon) {
 }
 
 gboolean astal_wp_node_get_lock_channels(AstalWpNode *self) {
+    g_return_val_if_fail(ASTAL_WP_IS_NODE(self), FALSE);
     AstalWpNodePrivate *priv = astal_wp_node_get_instance_private(self);
     return priv->lock_channels;
 }
@@ -381,12 +403,14 @@ gboolean astal_wp_node_get_lock_channels(AstalWpNode *self) {
  * Lock the channel volumes together. If set, all channels will always have the same volume.
  */
 void astal_wp_node_set_lock_channels(AstalWpNode *self, gboolean lock_channels) {
+    g_return_if_fail(ASTAL_WP_IS_NODE(self));
     AstalWpNodePrivate *priv = astal_wp_node_get_instance_private(self);
     priv->lock_channels = lock_channels;
     astal_wp_node_set_volume(self, priv->volume);
 }
 
 const gchar *astal_wp_node_get_volume_icon(AstalWpNode *self) {
+    g_return_val_if_fail(ASTAL_WP_IS_NODE(self), "audio-volume-muted-symbolic");
     AstalWpNodePrivate *priv = astal_wp_node_get_instance_private(self);
     if (priv->type == ASTAL_WP_MEDIA_CLASS_AUDIO_MICROPHONE) {
         if (priv->mute) return "microphone-sensitivity-muted-symbolic";
@@ -410,7 +434,7 @@ const gchar *astal_wp_node_get_volume_icon(AstalWpNode *self) {
  * gets the serial number of this node
  */
 gint astal_wp_node_get_serial(AstalWpNode *self) {
-    g_return_val_if_fail(self != NULL, -1);
+    g_return_val_if_fail(ASTAL_WP_IS_NODE(self), -1);
     AstalWpNodePrivate *priv = astal_wp_node_get_instance_private(self);
     return priv->serial;
 }
@@ -424,6 +448,7 @@ gint astal_wp_node_get_serial(AstalWpNode *self) {
  * Returns: (nullable):
  */
 const gchar *astal_wp_node_get_path(AstalWpNode *self) {
+    g_return_val_if_fail(ASTAL_WP_IS_NODE(self), NULL);
     AstalWpNodePrivate *priv = astal_wp_node_get_instance_private(self);
     return priv->path;
 }
@@ -437,6 +462,7 @@ const gchar *astal_wp_node_get_path(AstalWpNode *self) {
  * Returns: (transfer container) (nullable) (type GList(AstalWpChannel))
  */
 GList *astal_wp_node_get_channels(AstalWpNode *self) {
+    g_return_val_if_fail(ASTAL_WP_IS_NODE(self), NULL);
     AstalWpNodePrivate *priv = astal_wp_node_get_instance_private(self);
     return g_hash_table_get_values(priv->channels);
 }
@@ -449,6 +475,7 @@ static void astal_wp_node_state_changed(AstalWpNode *self, WpNodeState old_state
 }
 
 void astal_wp_node_set_node(AstalWpNode *self, WpNode *node) {
+    g_return_if_fail(ASTAL_WP_IS_NODE(self));
     AstalWpNodePrivate *priv = astal_wp_node_get_instance_private(self);
     if (node != NULL && WP_IS_NODE(node)) {
         if (priv->node != NULL) {
@@ -471,6 +498,7 @@ void astal_wp_node_set_node(AstalWpNode *self, WpNode *node) {
 }
 
 void astal_wp_node_set_mixer(AstalWpNode *self, WpPlugin *mixer) {
+    g_return_if_fail(ASTAL_WP_IS_NODE(self));
     AstalWpNodePrivate *priv = astal_wp_node_get_instance_private(self);
     if (mixer != NULL && WP_IS_PLUGIN(mixer)) {
         if (priv->mixer != NULL)
@@ -484,6 +512,7 @@ void astal_wp_node_set_mixer(AstalWpNode *self, WpPlugin *mixer) {
 }
 
 void astal_wp_node_set_type(AstalWpNode *self, AstalWpMediaClass type) {
+    g_return_if_fail(ASTAL_WP_IS_NODE(self));
     AstalWpNodePrivate *priv = astal_wp_node_get_instance_private(self);
     priv->type = type;
 }
@@ -497,6 +526,7 @@ void astal_wp_node_set_type(AstalWpNode *self, AstalWpMediaClass type) {
  * Returns: (transfer full) (nullable)
  */
 gchar *astal_wp_node_get_pw_property(AstalWpNode *self, const gchar *key) {
+    g_return_val_if_fail(ASTAL_WP_IS_NODE(self), NULL);
     AstalWpNodePrivate *priv = astal_wp_node_get_instance_private(self);
     if(priv->node == NULL) return NULL;
     const gchar *value = wp_pipewire_object_get_property(WP_PIPEWIRE_OBJECT(priv->node), key);
